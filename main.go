@@ -3,45 +3,34 @@ package main
 import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	"github.com/mihailtudos/photosharer/controllers"
 	"github.com/mihailtudos/photosharer/views"
 	"log"
 	"net/http"
-	"path"
+	"path/filepath"
 )
-
-type Router struct{}
-
-func render(w http.ResponseWriter, filePath string, data interface{}) {
-	t, err := views.Parse(filePath)
-	if err != nil {
-		log.Printf("executing template %v", err.Error())
-		http.Error(w, "Failed executing the template", http.StatusInternalServerError)
-		return
-	}
-
-	t.Execute(w, data)
-}
-func homeHandler(w http.ResponseWriter, r *http.Request) {
-	tmplPath := path.Join("templates", "home.gohtml")
-	render(w, tmplPath, nil)
-}
-
-func contactHandler(w http.ResponseWriter, r *http.Request) {
-	tmplPath := path.Join("templates", "contact.gohtml")
-	render(w, tmplPath, nil)
-}
-
-func faqHandler(w http.ResponseWriter, r *http.Request) {
-	tmplPath := path.Join("templates", "faq.gohtml")
-	render(w, tmplPath, nil)
-}
 
 func main() {
 	r := chi.NewRouter()
-	r.Get("/", homeHandler)
 
-	r.Get("/contact", contactHandler)
-	r.Get("/faq", faqHandler)
+	tpl, err := views.Parse(filepath.Join("templates", "home.gohtml"))
+	if err != nil {
+		panic(err)
+	}
+	r.Get("/", controllers.StaticHandler(tpl))
+
+	tpl, err = views.Parse(filepath.Join("templates", "contact.gohtml"))
+	if err != nil {
+		panic(err)
+	}
+	r.Get("/contact", controllers.StaticHandler(tpl))
+
+	tpl, err = views.Parse(filepath.Join("templates", "faq.gohtml"))
+	if err != nil {
+		panic(err)
+	}
+	r.Get("/faq", controllers.StaticHandler(tpl))
+
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 	})
