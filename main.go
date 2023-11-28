@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
-	"html/template"
+	"github.com/mihailtudos/photosharer/views"
 	"log"
 	"net/http"
 	"path"
@@ -11,32 +11,29 @@ import (
 
 type Router struct{}
 
-func homeHandler(w http.ResponseWriter, r *http.Request) {
-	tmplPath := path.Join("templates", "home.gohtml")
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	t, err := template.ParseFiles(tmplPath)
+func render(w http.ResponseWriter, filePath string, data interface{}) {
+	t, err := views.Parse(filePath)
 	if err != nil {
-		log.Printf("parsing template %s", tmplPath)
-		http.Error(w, "Failed parsing the template", http.StatusInternalServerError)
-		return
-	}
-
-	err = t.Execute(w, nil)
-	if err != nil {
-		log.Printf("executing template %s", tmplPath)
+		log.Printf("executing template %v", err.Error())
 		http.Error(w, "Failed executing the template", http.StatusInternalServerError)
 		return
 	}
+
+	t.Execute(w, data)
+}
+func homeHandler(w http.ResponseWriter, r *http.Request) {
+	tmplPath := path.Join("templates", "home.gohtml")
+	render(w, tmplPath, nil)
 }
 
 func contactHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.Method, r.URL.Path)
-	fmt.Fprintln(w, "<h1>Welcome to the contact page</h1>")
+	tmplPath := path.Join("templates", "contact.gohtml")
+	render(w, tmplPath, nil)
 }
 
 func faqHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.Method, r.URL.Path)
-	fmt.Fprintln(w, "<h1>Welcome to the FAQ page</h1>")
+	tmplPath := path.Join("templates", "faq.gohtml")
+	render(w, tmplPath, nil)
 }
 
 func main() {
