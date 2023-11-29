@@ -1,5 +1,10 @@
 <h1>FAQ page</h1>
 <ul>
-    <li><strong>Is there a free version? </strong> - Yes! We offer a 3 months free trial</li>
-    <li><strong>How do I contact support?</strong> - Email us on support@photosharer</li>
+    {{ range .}}
+        {{template "qa" .}}
+    {{end}}
 </ul>
+
+{{define "qa"}}
+    <li><strong>{{ .Question }} </strong> - {{ .Answer }}</li>
+{{end}}
