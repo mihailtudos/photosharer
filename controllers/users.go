@@ -1,13 +1,12 @@
 package controllers
 
 import (
-	"github.com/mihailtudos/photosharer/views"
 	"net/http"
 )
 
 type Users struct {
 	Templates struct {
-		New views.Template
+		New Template
 	}
 }
 
