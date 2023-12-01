@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"fmt"
+	"github.com/mihailtudos/photosharer/models"
+	"log"
 	"net/http"
 )
 
@@ -13,6 +15,7 @@ type Users struct {
 	Templates struct {
 		New Template
 	}
+	UserService *models.UserService
 }
 
 func (u Users) New(w http.ResponseWriter, r *http.Request) {
@@ -25,6 +28,15 @@ func (u Users) New(w http.ResponseWriter, r *http.Request) {
 }
 
 func (u Users) Create(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "email %s", r.FormValue("email"))
-	fmt.Fprintf(w, "name %s", r.FormValue("name"))
+	email := r.FormValue("email")
+	password := r.FormValue("password")
+
+	user, err := u.UserService.Create(email, password)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintf(w, "%#v", user)
 }
