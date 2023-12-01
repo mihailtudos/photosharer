@@ -1,23 +1,22 @@
 package main
 
 import (
-	"os"
-	"text/template"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
 )
 
-type User struct {
-	Name string
-}
-
 func main() {
+	secret := "MySuperSecretPhrase"
+	password := "ThisIsMyPassword"
 
-	t, err := template.ParseFiles("hello.gohtml")
-	if err != nil {
-		panic(err)
-	}
+	h := hmac.New(sha256.New, []byte(secret))
 
-	err = t.Execute(os.Stdout, User{Name: "Mihail"})
-	if err != nil {
-		panic(err)
-	}
+	h.Write([]byte(password))
+
+	output := h.Sum(nil)
+
+	fmt.Println(hex.EncodeToString(output))
+	// => 827e2efb277ea22df6e9559ecd5dd5448b7da6f1ba3d63fde0f14b91714e9bb7
 }
