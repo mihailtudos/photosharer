@@ -2,9 +2,7 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/gorilla/csrf"
 	"github.com/mihailtudos/photosharer/models"
-	"html/template"
 	"log"
 	"net/http"
 )
@@ -27,18 +25,16 @@ func (u Users) New(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data.Email = r.FormValue("email")
-	u.Templates.New.Execute(w, data)
+	u.Templates.New.Execute(w, r, data)
 }
 
 func (u Users) SignIn(w http.ResponseWriter, r *http.Request) {
 	var data struct {
-		Email     string
-		CSRFField template.HTML
+		Email string
 	}
 
 	data.Email = r.FormValue("email")
-	data.CSRFField = csrf.TemplateField(r)
-	u.Templates.SignIn.Execute(w, data)
+	u.Templates.SignIn.Execute(w, r, data)
 }
 
 func (u Users) Authenticate(w http.ResponseWriter, r *http.Request) {

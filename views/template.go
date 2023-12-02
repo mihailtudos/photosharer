@@ -2,6 +2,7 @@ package views
 
 import (
 	"fmt"
+	"github.com/gorilla/csrf"
 	"html/template"
 	"io/fs"
 	"log"
@@ -20,7 +21,17 @@ func Must(t Template, err error) Template {
 }
 
 func ParseFS(fs fs.FS, patterns ...string) (Template, error) {
-	tpl, err := template.ParseFS(fs, patterns...)
+	// Template functions need to be added before the templates are parsed
+	tpl := template.New(patterns[0])
+	tpl.Funcs(
+		template.FuncMap{
+			"csrfField": func() template.HTML {
+				return `<!-- TODO: implement the csrfField -->`
+			},
+		},
+	)
+
+	tpl, err := tpl.ParseFS(fs, patterns...)
 	if err != nil {
 		return Template{}, fmt.Errorf("parsing fs template: %w", err)
 	}
@@ -28,19 +39,27 @@ func ParseFS(fs fs.FS, patterns ...string) (Template, error) {
 	return Template{htmlTmpl: tpl}, nil
 }
 
-func Parse(filePath string) (Template, error) {
-	t, err := template.ParseFiles(filePath)
+func (t Template) Execute(w http.ResponseWriter, r *http.Request, data interface{}) {
+	// to avoid race conditions (since template struct is a pointer to a struct)
+	// we will copy the templates each time a req comes through
+	tpl, err := t.htmlTmpl.Clone()
 	if err != nil {
-		return Template{}, fmt.Errorf("parsing template: %w", err)
+		log.Printf("executing template %v", err.Error())
+		http.Error(w, "Failed executing the template", http.StatusInternalServerError)
+		return
 	}
 
-	return Template{htmlTmpl: t}, nil
-}
-
-func (t Template) Execute(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	// add the csfr token here as we have access to the request
+	tpl = tpl.Funcs(
+		template.FuncMap{
+			"csrfField": func() template.HTML {
+				return csrf.TemplateField(r)
+			},
+		},
+	)
 
-	err := t.htmlTmpl.Execute(w, data)
+	err = tpl.Execute(w, data)
 	if err != nil {
 		log.Printf("executing template %v", err.Error())
 		http.Error(w, "Failed executing the template", http.StatusInternalServerError)
