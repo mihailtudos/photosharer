@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	"github.com/gorilla/csrf"
 	"github.com/mihailtudos/photosharer/controllers"
 	"github.com/mihailtudos/photosharer/models"
 	"github.com/mihailtudos/photosharer/templates"
@@ -49,6 +50,9 @@ func main() {
 		http.NotFound(w, r)
 	})
 
+	csrfKey := "3af1d7a51d66604a73ea550f8261ebdb"
+	csrfMiddleware := csrf.Protect([]byte(csrfKey), csrf.Secure(false))
+
 	fmt.Println("starting server at 8080...")
-	log.Fatal(http.ListenAndServe("localhost:8080", r))
+	log.Fatal(http.ListenAndServe("localhost:8080", csrfMiddleware(r)))
 }

@@ -26,3 +26,7 @@ Go provides an abstraction layer through the database/sql library which is what 
 ```shell
     go get github.com/jackc/pgx/v4
 ```
+
+## Security 
+
+We use CSRF to protect the incoming requests using [Gorilla CSRF](https://github.com/gorilla/csrf)
