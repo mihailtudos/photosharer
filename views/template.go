@@ -1,9 +1,11 @@
 package views
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/gorilla/csrf"
 	"html/template"
+	"io"
 	"io/fs"
 	"log"
 	"net/http"
@@ -25,8 +27,8 @@ func ParseFS(fs fs.FS, patterns ...string) (Template, error) {
 	tpl := template.New(patterns[0])
 	tpl.Funcs(
 		template.FuncMap{
-			"csrfField": func() template.HTML {
-				return `<!-- TODO: implement the csrfField -->`
+			"csrfField": func() (template.HTML, error) {
+				return "", fmt.Errorf("csrfField not implemented")
 			},
 		},
 	)
@@ -50,6 +52,10 @@ func (t Template) Execute(w http.ResponseWriter, r *http.Request, data interface
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	// buf is a byte buffer used to write the templates to before writing it to the response
+	// it allows to check if there is any error before writing the template and avoiding broken pages
+	var buf bytes.Buffer
+
 	// add the csfr token here as we have access to the request
 	tpl = tpl.Funcs(
 		template.FuncMap{
@@ -59,7 +65,14 @@ func (t Template) Execute(w http.ResponseWriter, r *http.Request, data interface
 		},
 	)
 
-	err = tpl.Execute(w, data)
+	err = tpl.Execute(&buf, data)
+	if err != nil {
+		log.Printf("executing template %v", err.Error())
+		http.Error(w, "Failed executing the template", http.StatusInternalServerError)
+		return
+	}
+
+	_, err = io.Copy(w, &buf)
 	if err != nil {
 		log.Printf("executing template %v", err.Error())
 		http.Error(w, "Failed executing the template", http.StatusInternalServerError)
