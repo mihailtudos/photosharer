@@ -16,6 +16,13 @@
             </div>
             <div class="flex items-center gap-4">
                 <a href="/signup">Sign up</a>
+                <form action="/signout" method="post">
+                    <div class="hidden">
+                        {{ csrfField }}
+                    </div>
+
+                    <button type="submit">Sign Out</button>
+                </form>
             </div>
         </nav>
     </header>
