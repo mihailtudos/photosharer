@@ -75,30 +75,21 @@ func (ss SessionService) Create(userID int) (*Session, error) {
 	return &session, nil
 }
 
+// User method on the sessions service returns the logged-in user using the session token hash
 func (ss SessionService) User(token string) (*User, error) {
 	// Hash session token
 	tokenHash := ss.hash(token)
 	// Query for session with the token
 	var user User
+
+	// Query the user based of the session hash
 	row := ss.DB.QueryRow(`
-		SELECT user_id
-		FROM  sessions
-		WHERE token_hash = $1;`, tokenHash)
+		SELECT users.id, users.email, users.password_hash
+		FROM sessions
+			JOIN users on users.id = sessions.user_id
+		WHERE sessions.token_hash = $1;`, tokenHash)
 
-	err := row.Scan(&user.ID)
-
-	if err != nil {
-		return nil, fmt.Errorf("user: %w", err)
-	}
-
-	// Query the user based of the sessions' user_id
-	row = ss.DB.QueryRow(`
-		SELECT email, password_hash
-		FROM users 
-		WHERE id = $1;
-	`, user.ID)
-
-	err = row.Scan(&user.Email, &user.PasswordHash)
+	err := row.Scan(&user.ID, &user.Email, &user.PasswordHash)
 	if err != nil {
 		return nil, fmt.Errorf("user: %w", err)
 	}
