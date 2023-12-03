@@ -25,6 +25,10 @@ func main() {
 		DB: db,
 	}
 
+	sessionService := models.SessionService{
+		DB: db,
+	}
+
 	tpl := views.Must(views.ParseFS(templates.FS, "layout.gohtml", "shared/navbar.gohtml", "shared/footer.gohtml", "home.gohtml"))
 	r.Get("/", controllers.StaticHandler(tpl))
 
@@ -35,7 +39,8 @@ func main() {
 	r.Get("/faq", controllers.FAQ(tpl))
 
 	usersC := controllers.Users{
-		UserService: &userService,
+		UserService:    &userService,
+		SessionService: &sessionService,
 	}
 
 	usersC.Templates.New = views.Must(views.ParseFS(templates.FS, "layout.gohtml", "shared/navbar.gohtml", "shared/footer.gohtml", "signup.gohtml"))
