@@ -16,7 +16,8 @@ type Users struct {
 		New    Template
 		SignIn Template
 	}
-	UserService *models.UserService
+	UserService    *models.UserService
+	SessionService *models.SessionService
 }
 
 func (u Users) New(w http.ResponseWriter, r *http.Request) {
@@ -37,6 +38,7 @@ func (u Users) SignIn(w http.ResponseWriter, r *http.Request) {
 	u.Templates.SignIn.Execute(w, r, data)
 }
 
+// Authenticate method on the users service is used to login users
 func (u Users) Authenticate(w http.ResponseWriter, r *http.Request) {
 	var data struct {
 		Email    string
@@ -53,12 +55,20 @@ func (u Users) Authenticate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie := http.Cookie{Name: "email", Value: user.Email, Path: "/", HttpOnly: true}
+	session, err := u.SessionService.Create(user.ID)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	cookie := http.Cookie{Name: "session", Value: session.Token, Path: "/", HttpOnly: true}
 	http.SetCookie(w, &cookie)
 
-	fmt.Fprintf(w, "Authenticated %+v", user)
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
+// Create method on the users service is used to register new users
 func (u Users) Create(w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
 	password := r.FormValue("password")
@@ -70,14 +80,39 @@ func (u Users) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "%#v", user)
-}
-
-func (u Users) CurrentUser(w http.ResponseWriter, r *http.Request) {
-	email, err := r.Cookie("email")
+	session, err := u.SessionService.Create(user.ID)
 	if err != nil {
-		fmt.Fprintf(w, "This eamil cookie could not be read")
+		fmt.Println(err)
+		http.Redirect(w, r, "/signin", http.StatusFound)
+		return
 	}
 
-	fmt.Fprintf(w, "email cookie: %s\n", email.Value)
+	cookie := http.Cookie{
+		Name:     "session",
+		Value:    session.Token,
+		Path:     "/",
+		HttpOnly: true,
+	}
+	http.SetCookie(w, &cookie)
+	http.Redirect(w, r, "/users/me", http.StatusFound)
+}
+
+// CurrentUser method on the users service would return the current signed-in user
+func (u Users) CurrentUser(w http.ResponseWriter, r *http.Request) {
+	tokenCookie, err := r.Cookie("session")
+	if err != nil {
+		fmt.Println(err)
+		http.Redirect(w, r, "/signin", http.StatusFound)
+		return
+	}
+
+	// lookup the user
+	user, err := u.SessionService.User(tokenCookie.Value)
+	if err != nil {
+		fmt.Println(err)
+		http.Redirect(w, r, "/signin", http.StatusFound)
+		return
+	}
+
+	fmt.Fprintf(w, "email cookie: %+v\n", user)
 }
