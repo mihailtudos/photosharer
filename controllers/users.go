@@ -63,7 +63,7 @@ func (u Users) Authenticate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setCookie(w, CookieSession, session.Token)
-	http.Redirect(w, r, "/", http.StatusFound)
+	http.Redirect(w, r, "/users/me", http.StatusFound)
 }
 
 // Create method on the users service is used to register new users
