@@ -27,6 +27,17 @@ Go provides an abstraction layer through the database/sql library which is what 
     go get github.com/jackc/pgx/v4
 ```
 
+## Migrations 
+
+(https://github.com/pressly/goose)[Goose] is used to handle the DB migrations. 
+Updating the database or running migrations you'll need to provide full commands including the connection string as below:
+
+```shell
+  goose postgres "host=localhost port=5432 user=user password=password dbname=dbname sslmode=disable" status
+```
+
+Node: the migration related commands need to be run from the migrations folder.
+
 ## Security 
 
 We use CSRF to protect the incoming requests using [Gorilla CSRF](https://github.com/gorilla/csrf)

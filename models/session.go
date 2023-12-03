@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"github.com/mihailtudos/photosharer/rand"
 )
@@ -52,22 +51,12 @@ func (ss SessionService) Create(userID int) (*Session, error) {
 
 	// if the a user session already exists update it
 	row := ss.DB.QueryRow(`
-		UPDATE sessions
-		    SET token_hash = $2
-		    WHERE user_id = $1
-		RETURNING id;`, session.UserID, session.TokenHash)
+		INSERT INTO sessions (user_id, token_hash)
+		VALUES ($1, $2) ON CONFLICT (user_id) DO 
+		    UPDATE 
+		SET token_hash = $2 RETURNING id;`, session.UserID, session.TokenHash)
+
 	err = row.Scan(&session.ID)
-
-	// if a user session doesn't exist insert one
-	if errors.Is(err, sql.ErrNoRows) {
-		row = ss.DB.QueryRow(`
-			INSERT INTO sessions (user_id, token_hash)
-			VALUES ($1, $2)
-			RETURNING id;`, session.UserID, session.TokenHash)
-
-		err = row.Scan(&session.ID)
-	}
-
 	if err != nil {
 		return nil, fmt.Errorf("create: %w", err)
 	}
