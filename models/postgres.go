@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/pressly/goose/v3"
+	"io/fs"
 
 	_ "github.com/jackc/pgx/v4"
 	_ "github.com/jackc/pgx/v4/stdlib"
@@ -60,4 +61,17 @@ func Migrate(db *sql.DB, dir string) error {
 	}
 
 	return nil
+}
+
+func MigrateFS(db *sql.DB, migrationFs fs.FS, dir string) error {
+	if dir == "" {
+		dir = "."
+	}
+
+	goose.SetBaseFS(migrationFs)
+	defer func() {
+		goose.SetBaseFS(nil)
+	}()
+
+	return Migrate(db, dir)
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/csrf"
 	"github.com/mihailtudos/photosharer/controllers"
+	"github.com/mihailtudos/photosharer/migrations"
 	"github.com/mihailtudos/photosharer/models"
 	"github.com/mihailtudos/photosharer/templates"
 	"github.com/mihailtudos/photosharer/views"
@@ -21,7 +22,7 @@ func main() {
 	}
 	defer db.Close()
 
-	err = models.Migrate(db, "migrations")
+	err = models.MigrateFS(db, migrations.FS, ".")
 	if err != nil {
 		panic(err)
 	}
