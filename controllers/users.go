@@ -93,10 +93,6 @@ func (u Users) Create(w http.ResponseWriter, r *http.Request) {
 // CurrentUser method on the users service would return the current signed-in user
 func (u Users) CurrentUser(w http.ResponseWriter, r *http.Request) {
 	user := context.User(r.Context())
-	if user == nil {
-		http.Redirect(w, r, "/signin", http.StatusFound)
-		return
-	}
 
 	_, _ = fmt.Fprintf(w, "current user: %#v\n", user)
 }
@@ -123,6 +119,8 @@ type UserMiddleware struct {
 	SessionService *models.SessionService
 }
 
+// SetUser is a middleware that sets the logged in user in the context so it is available
+// in each request
 func (umw UserMiddleware) SetUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token, err := readCookie(r, CookieSession)
@@ -141,6 +139,19 @@ func (umw UserMiddleware) SetUser(next http.Handler) http.Handler {
 		ctx := r.Context()
 		ctx = context.WithUser(ctx, user)
 		r = r.WithContext(ctx)
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+// RequireUser is a middleware that ensures the user is set
+func (umw UserMiddleware) RequireUser(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := context.User(r.Context())
+		if user == nil {
+			http.Redirect(w, r, "/signin", http.StatusFound)
+			return
+		}
 
 		next.ServeHTTP(w, r)
 	})
