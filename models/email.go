@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+
 	"github.com/go-mail/mail/v2"
 )
 
@@ -75,4 +76,23 @@ func (es EmailService) setFrom(msg *mail.Message, email Email) {
 	}
 
 	msg.SetHeader("From", from)
+}
+
+func (es *EmailService) ForgotPassword(to, resetUrl string) error {
+	email := Email{
+		Subject:   "Reset your password",
+		To:        to,
+		Plaintext: "To reset your password, please visit the link: " + resetUrl,
+		HTML: `
+			<p>To reset your password, please visit the link: <a href="` + resetUrl + `">reset password</a></p>
+		`,
+	}
+
+	err := es.Send(email)
+
+	if err != nil {
+		return fmt.Errorf("forgot password email: %w", err)
+	}
+
+	return nil
 }
