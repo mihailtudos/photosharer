@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"github.com/mihailtudos/photosharer/context"
 	"github.com/mihailtudos/photosharer/models"
 	"log"
 	"net/http"
@@ -91,22 +92,13 @@ func (u Users) Create(w http.ResponseWriter, r *http.Request) {
 
 // CurrentUser method on the users service would return the current signed-in user
 func (u Users) CurrentUser(w http.ResponseWriter, r *http.Request) {
-	token, err := readCookie(r, CookieSession)
-	if err != nil {
-		fmt.Println(err)
+	user := context.User(r.Context())
+	if user == nil {
 		http.Redirect(w, r, "/signin", http.StatusFound)
 		return
 	}
 
-	// lookup the user
-	user, err := u.SessionService.User(token)
-	if err != nil {
-		fmt.Println(err)
-		http.Redirect(w, r, "/signin", http.StatusFound)
-		return
-	}
-
-	fmt.Fprintf(w, "email cookie: %+v\n", user)
+	_, _ = fmt.Fprintf(w, "current user: %#v\n", user)
 }
 
 func (u Users) SignOut(w http.ResponseWriter, r *http.Request) {
@@ -125,4 +117,31 @@ func (u Users) SignOut(w http.ResponseWriter, r *http.Request) {
 
 	deleteCookie(w, CookieSession)
 	http.Redirect(w, r, "/signin", http.StatusFound)
+}
+
+type UserMiddleware struct {
+	SessionService *models.SessionService
+}
+
+func (umw UserMiddleware) SetUser(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token, err := readCookie(r, CookieSession)
+		if err != nil {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// lookup the user
+		user, err := umw.SessionService.User(token)
+		if err != nil {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		ctx := r.Context()
+		ctx = context.WithUser(ctx, user)
+		r = r.WithContext(ctx)
+
+		next.ServeHTTP(w, r)
+	})
 }

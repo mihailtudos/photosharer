@@ -62,9 +62,11 @@ func main() {
 		http.NotFound(w, r)
 	})
 
+	umw := controllers.UserMiddleware{SessionService: &sessionService}
+
 	csrfKey := "3af1d7a51d66604a73ea550f8261ebdb"
 	csrfMiddleware := csrf.Protect([]byte(csrfKey), csrf.Secure(false))
 
 	fmt.Println("starting server at 8080...")
-	log.Fatal(http.ListenAndServe("localhost:8080", csrfMiddleware(r)))
+	log.Fatal(http.ListenAndServe("localhost:8080", csrfMiddleware(umw.SetUser(r))))
 }
