@@ -9,13 +9,6 @@ import (
 	"github.com/mihailtudos/photosharer/models"
 )
 
-const (
-	host     = "sandbox.smtp.mailtrap.io"
-	port     = 2525
-	username = "3ee29496783da1"
-	password = "34731cfee5d6d5"
-)
-
 func main() {
 	email := models.Email{
 		From:      "test@renect.co.uk",

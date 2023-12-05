@@ -1,2 +1,5 @@
 .idea
 photosharer
+
+# Env Variables
+.env
