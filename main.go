@@ -2,18 +2,35 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"strconv"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/csrf"
+	"github.com/joho/godotenv"
 	"github.com/mihailtudos/photosharer/controllers"
 	"github.com/mihailtudos/photosharer/migrations"
 	"github.com/mihailtudos/photosharer/models"
 	"github.com/mihailtudos/photosharer/templates"
 	"github.com/mihailtudos/photosharer/views"
-	"log"
-	"net/http"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	host := os.Getenv("SMTP_HOST")
+	port, err := strconv.Atoi(os.Getenv("SMTP_PORT"))
+	if err != nil {
+		log.Fatal("Could convert port from .env file")
+	}
+	username := os.Getenv("SMTP_USERNAME")
+	password := os.Getenv("SMTP_PASSWORD")
+
 	// Set up the DB
 	cfg := models.DefaultPostgresConfig()
 	db, err := models.Open(cfg)
@@ -35,6 +52,8 @@ func main() {
 	sessionService := models.SessionService{
 		DB: db,
 	}
+
+	models.NewEmailService(models.SMTPConfig{Host: host, Port: port, Username: username, Password: password})
 
 	// Setup middleware
 	umw := controllers.UserMiddleware{SessionService: &sessionService}
