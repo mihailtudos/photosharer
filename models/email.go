@@ -7,10 +7,6 @@ import (
 
 const (
 	DefaultSender = "info@renect.co.uk"
-	host          = "sandbox.smtp.mailtrap.io"
-	port          = 2525
-	username      = "3ee29496783da1"
-	password      = "34731cfee5d6d5"
 )
 
 type Email struct {

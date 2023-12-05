@@ -5,7 +5,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"github.com/go-mail/mail/v2"
+
+	"github.com/mihailtudos/photosharer/models"
 )
 
 const (
@@ -16,26 +17,21 @@ const (
 )
 
 func main() {
-	//email := models.Email{}
-	from := "test@renect.co.uk"
-	to := "mihairmcr7@gmail.com"
-	subject := "Testing emails in Go"
-	plainText := "This is the body of the email"
-	html := `<h1>Hi there!</h1>
+	email := models.Email{
+		From:      "test@renect.co.uk",
+		To:        "mihairmcr7@gmail.com",
+		Subject:   "Testing emails in Go",
+		Plaintext: "This is the body of the email",
+		HTML: `<h1>Hi there!</h1>
 				<p>This is a test email so if you receive it it's great</p>
 				</br></br> 
 				<p>Regards</p>
-				<p>Mihail</p>
-	`
-	msg := mail.NewMessage()
-	msg.SetHeader("To", to)
-	msg.SetHeader("From", from)
-	msg.SetHeader("Subject", subject)
-	msg.SetBody("text/plain", plainText)
-	msg.AddAlternative("text/html", html)
+				<p>Mihail</p>`,
+	}
 
-	dialer := mail.NewDialer(host, port, username, password)
-	err := dialer.DialAndSend(msg)
+	es := models.NewEmailService(models.SMTPConfig{Host: host, Port: port, Username: username, Password: password})
+	err := es.Send(email)
+
 	if err != nil {
 		panic(err)
 	}
