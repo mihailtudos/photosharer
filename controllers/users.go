@@ -6,6 +6,7 @@ import (
 	"github.com/mihailtudos/photosharer/models"
 	"log"
 	"net/http"
+	"net/url"
 )
 
 // Users struct provides functionality needed for the users controller
@@ -14,11 +15,15 @@ import (
 // another benefit of decoupling here is breaking circular dependencies
 type Users struct {
 	Templates struct {
-		New    Template
-		SignIn Template
+		New            Template
+		SignIn         Template
+		ForgotPassword Template
+		CheckYourEmail Template
 	}
-	UserService    *models.UserService
-	SessionService *models.SessionService
+	UserService          *models.UserService
+	SessionService       *models.SessionService
+	PasswordResetService *models.PasswordResetService
+	EmailService         *models.EmailService
 }
 
 func (u Users) New(w http.ResponseWriter, r *http.Request) {
@@ -114,6 +119,49 @@ func (u Users) SignOut(w http.ResponseWriter, r *http.Request) {
 	deleteCookie(w, CookieSession)
 	http.Redirect(w, r, "/signin", http.StatusFound)
 }
+
+// ForgotPassword renders the reset password form
+func (u Users) ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	var data struct {
+		Email string
+	}
+
+	data.Email = r.FormValue("email")
+	u.Templates.ForgotPassword.Execute(w, r, data)
+}
+
+func (u Users) ProcessForgotPassword(w http.ResponseWriter, r *http.Request) {
+	var data struct {
+		Email string
+	}
+
+	data.Email = r.FormValue("email")
+	pwReset, err := u.PasswordResetService.Create(data.Email)
+	if err != nil {
+		// TODO: Handle other cases
+		fmt.Println(err)
+		http.Error(w, "Something went wrong %w", http.StatusInternalServerError)
+		return
+	}
+
+	vals := url.Values{
+		"token": {pwReset.Token},
+	}
+
+	resetURL := "https://renect.co.uk/reset-pw?" + vals.Encode()
+	err = u.EmailService.ForgotPassword(data.Email, resetURL)
+	if err != nil {
+		// TODO: Handle other cases
+		fmt.Println(err)
+		http.Error(w, "Something went wrong %w", http.StatusInternalServerError)
+		return
+	}
+
+	// Don't render the reset token
+	u.Templates.CheckYourEmail.Execute(w, r, data)
+}
+
+// Middleware related to the User
 
 type UserMiddleware struct {
 	SessionService *models.SessionService
