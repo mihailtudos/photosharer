@@ -29,7 +29,7 @@ Go provides an abstraction layer through the database/sql library which is what 
 
 ## Migrations 
 
-(https://github.com/pressly/goose)[Goose] is used to handle the DB migrations. 
+[Goose](https://github.com/pressly/goose) is used to handle the DB migrations. 
 Updating the database or running migrations you'll need to provide full commands including the connection string as below:
 
 ```shell
@@ -41,3 +41,11 @@ Node: the migration related commands need to be run from the migrations folder.
 ## Security 
 
 We use CSRF to protect the incoming requests using [Gorilla CSRF](https://github.com/gorilla/csrf)
+
+## Communication 
+
+### Email
+
+Emails are configured to use SMTP with mailtrap, but can use other services. 
+
+For email handling such as composing the actual emails the [Go-mail](https://pkg.go.dev/github.com/go-mail/mail/v2) library is used

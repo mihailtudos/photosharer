@@ -16,6 +16,7 @@ const (
 )
 
 func main() {
+	//email := models.Email{}
 	from := "test@renect.co.uk"
 	to := "mihairmcr7@gmail.com"
 	subject := "Testing emails in Go"
