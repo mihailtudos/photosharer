@@ -17,23 +17,49 @@ import (
 	"github.com/mihailtudos/photosharer/views"
 )
 
-func main() {
+type config struct {
+	PSQL models.PostgresConfig
+	SMTP models.SMTPConfig
+	CSRF struct {
+		Key    string
+		Secure bool
+	}
+	Server struct {
+		Address string
+	}
+}
+
+func loadEnvConfig() (config, error) {
+	var cfg config
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		return cfg, err
 	}
 
-	host := os.Getenv("SMTP_HOST")
-	port, err := strconv.Atoi(os.Getenv("SMTP_PORT"))
+	cfg.PSQL = models.DefaultPostgresConfig()
+	cfg.SMTP.Host = os.Getenv("SMTP_HOST")
+	cfg.SMTP.Port, err = strconv.Atoi(os.Getenv("SMTP_PORT"))
 	if err != nil {
 		log.Fatal("Could convert port from .env file")
 	}
-	username := os.Getenv("SMTP_USERNAME")
-	password := os.Getenv("SMTP_PASSWORD")
+	cfg.SMTP.Username = os.Getenv("SMTP_USERNAME")
+	cfg.SMTP.Password = os.Getenv("SMTP_PASSWORD")
+
+	cfg.CSRF.Key = "3af1d7a51d66604a73ea550f8261ebdb"
+	cfg.CSRF.Secure = false
+
+	cfg.Server.Address = ":8080"
+	return cfg, nil
+}
+
+func main() {
+	cfg, err := loadEnvConfig()
+	if err != nil {
+		panic(err)
+	}
 
 	// Set up the DB
-	cfg := models.DefaultPostgresConfig()
-	db, err := models.Open(cfg)
+	db, err := models.Open(cfg.PSQL)
 	if err != nil {
 		panic(err)
 	}
@@ -45,31 +71,35 @@ func main() {
 	}
 
 	// Setup services
-	userService := models.UserService{
+	userService := &models.UserService{
 		DB: db,
 	}
 
-	sessionService := models.SessionService{
+	sessionService := &models.SessionService{
 		DB: db,
 	}
 
-	models.NewEmailService(models.SMTPConfig{Host: host, Port: port, Username: username, Password: password})
+	passwordResetService := &models.PasswordResetService{DB: db}
+
+	emailService := models.NewEmailService(cfg.SMTP)
 
 	// Setup middleware
-	umw := controllers.UserMiddleware{SessionService: &sessionService}
+	umw := controllers.UserMiddleware{SessionService: sessionService}
 
-	csrfKey := "3af1d7a51d66604a73ea550f8261ebdb"
-	csrfMiddleware := csrf.Protect([]byte(csrfKey), csrf.Secure(false))
+	csrfMiddleware := csrf.Protect([]byte(cfg.CSRF.Key), csrf.Secure(cfg.CSRF.Secure))
 
 	// Setup controllers
 	usersC := controllers.Users{
-		UserService:    &userService,
-		SessionService: &sessionService,
+		UserService:          userService,
+		SessionService:       sessionService,
+		PasswordResetService: passwordResetService,
+		EmailService:         emailService,
 	}
 
 	usersC.Templates.New = views.Must(views.ParseFS(templates.FS, "layout.gohtml", "shared/navbar.gohtml", "shared/footer.gohtml", "signup.gohtml"))
 	usersC.Templates.SignIn = views.Must(views.ParseFS(templates.FS, "layout.gohtml", "shared/navbar.gohtml", "shared/footer.gohtml", "signin.gohtml"))
 	usersC.Templates.ForgotPassword = views.Must(views.ParseFS(templates.FS, "layout.gohtml", "shared/navbar.gohtml", "shared/footer.gohtml", "forgot-pw.gohtml"))
+	usersC.Templates.CheckYourEmail = views.Must(views.ParseFS(templates.FS, "layout.gohtml", "shared/navbar.gohtml", "shared/footer.gohtml", "check-your-email.gohtml"))
 
 	//setup router and routes
 	r := chi.NewRouter()
@@ -103,6 +133,6 @@ func main() {
 	})
 
 	// Start server
-	fmt.Println("starting server at 8080...")
-	log.Fatal(http.ListenAndServe("localhost:8080", r))
+	fmt.Println("starting server on ", cfg.Server.Address)
+	log.Fatal(http.ListenAndServe(cfg.Server.Address, r))
 }
