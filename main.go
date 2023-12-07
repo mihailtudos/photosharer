@@ -100,6 +100,7 @@ func main() {
 	usersC.Templates.SignIn = views.Must(views.ParseFS(templates.FS, "layout.gohtml", "shared/navbar.gohtml", "shared/footer.gohtml", "signin.gohtml"))
 	usersC.Templates.ForgotPassword = views.Must(views.ParseFS(templates.FS, "layout.gohtml", "shared/navbar.gohtml", "shared/footer.gohtml", "forgot-pw.gohtml"))
 	usersC.Templates.CheckYourEmail = views.Must(views.ParseFS(templates.FS, "layout.gohtml", "shared/navbar.gohtml", "shared/footer.gohtml", "check-your-email.gohtml"))
+	usersC.Templates.ResetPassword = views.Must(views.ParseFS(templates.FS, "layout.gohtml", "shared/navbar.gohtml", "shared/footer.gohtml", "reset-pw.gohtml"))
 
 	//setup router and routes
 	r := chi.NewRouter()
@@ -122,6 +123,8 @@ func main() {
 	r.Post("/signout", usersC.SignOut)
 	r.Get("/forgot-pw", usersC.ForgotPassword)
 	r.Post("/forgot-pw", usersC.ProcessForgotPassword)
+	r.Get("/reset-pw", usersC.ResetPassword)
+	r.Post("/reset-pw", usersC.ProcessResetPassword)
 
 	r.Route("/users/me", func(r chi.Router) {
 		r.Use(umw.RequireUser)

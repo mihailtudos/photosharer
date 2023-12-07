@@ -1,0 +1,31 @@
+{{define "content"}}
+    <main class="h-full w-full px-4 ">
+        <form action="/signin" method="post" class="max-w-md bg-white flex flex-col mx-auto w-full my-24">
+            <h1 class="text-gray-900 text-2xl mb-1 font-semibold title-font text-center">Reset your password</h1>
+            <div class="hidden">
+                {{ csrfField }}
+            </div>
+
+            <div class="mb-4 w-full">
+                <label for="password" class="leading-7 text-sm text-gray-600">New password</label>
+                <input type="password" id="password" name="password" class="w-full bg-white rounded border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out" required>
+            </div>
+
+            {{ if .Token}}
+                <div class="hidden">
+                    <input type="hidden" name="token" id="token" class="w-full bg-white rounded border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out" value="{{ .Token }}">
+                </div>
+            {{else}}
+                <div class="mb-4 w-full">
+                    <label for="token" class="leading-7 text-sm text-gray-600">Password reset token</label>
+                    <input type="text" id="token" name="token" class="w-full bg-white rounded border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out" required placeholder="Check your email">
+                </div>
+            {{ end }}
+            <button class="text-white bg-blue-500 border-0 py-2 px-6 focus:outline-none hover:bg-blue-600 rounded text-lg">Reset</button>
+            <div class="my-2.5 flex justify-between text-gray-500">
+                <p>Don't have an account yet? <a href="/signup" class="underline hover:text-gray-600">Sign up</a></p>
+                <a href="/signin" class="underline hover:text-gray-600">Sign in</a>
+            </div>
+        </form>
+    </main>
+{{end}}
