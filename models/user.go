@@ -43,7 +43,7 @@ func (us *UserService) Create(email, password string) (*User, error) {
 	return &user, nil
 }
 
-func (us UserService) Authenticate(email, password string) (*User, error) {
+func (us *UserService) Authenticate(email, password string) (*User, error) {
 	email = strings.ToLower(email)
 	user := User{Email: email}
 
@@ -66,7 +66,7 @@ func (us UserService) Authenticate(email, password string) (*User, error) {
 	return &user, nil
 }
 
-func (us UserService) UpdatePassword(userID int, password string) error {
+func (us *UserService) UpdatePassword(userID int, password string) error {
 	hashedBytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return fmt.Errorf("password reset: %w", err)
@@ -76,7 +76,7 @@ func (us UserService) UpdatePassword(userID int, password string) error {
 	_, err = us.DB.Exec(`
 		UPDATE users
 		SET password_hash = $2
-		WHERE id = $2;
+		WHERE id = $1;
 	`, userID, passwordHash)
 
 	if err != nil {
