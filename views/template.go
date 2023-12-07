@@ -35,6 +35,13 @@ func ParseFS(fs fs.FS, patterns ...string) (Template, error) {
 			"currentUser": func() (*models.User, error) {
 				return nil, fmt.Errorf("csrfField not implemented")
 			},
+			"errors": func() []string {
+				return []string{
+					"Don't do that",
+					"The email is not valid",
+					"Something went wrong",
+				}
+			},
 		},
 	)
 
