@@ -75,13 +75,17 @@ func (u Users) Authenticate(w http.ResponseWriter, r *http.Request) {
 
 // Create method on the users service is used to register new users
 func (u Users) Create(w http.ResponseWriter, r *http.Request) {
-	email := r.FormValue("email")
-	password := r.FormValue("password")
+	var data struct {
+		Email    string
+		Password string
+	}
 
-	user, err := u.UserService.Create(email, password)
+	data.Email = r.FormValue("email")
+	data.Password = r.FormValue("password")
+
+	user, err := u.UserService.Create(data.Email, data.Password)
 	if err != nil {
-		log.Println(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		u.Templates.New.Execute(w, r, data, err)
 		return
 	}
 

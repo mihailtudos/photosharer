@@ -36,11 +36,7 @@ func ParseFS(fs fs.FS, patterns ...string) (Template, error) {
 				return nil, fmt.Errorf("csrfField not implemented")
 			},
 			"errors": func() []string {
-				return []string{
-					"Don't do that",
-					"The email is not valid",
-					"Something went wrong",
-				}
+				return nil
 			},
 		},
 	)
@@ -53,7 +49,7 @@ func ParseFS(fs fs.FS, patterns ...string) (Template, error) {
 	return Template{htmlTmpl: tpl}, nil
 }
 
-func (t Template) Execute(w http.ResponseWriter, r *http.Request, data interface{}) {
+func (t Template) Execute(w http.ResponseWriter, r *http.Request, data interface{}, errs ...error) {
 	// to avoid race conditions (since template struct is a pointer to a struct)
 	// we will copy the templates each time a req comes through
 	tpl, err := t.htmlTmpl.Clone()
@@ -76,6 +72,13 @@ func (t Template) Execute(w http.ResponseWriter, r *http.Request, data interface
 			},
 			"currentUser": func() *models.User {
 				return context.User(r.Context())
+			},
+			"errors": func() []string {
+				var errMessages []string
+				for _, err := range errs {
+					errMessages = append(errMessages, err.Error())
+				}
+				return errMessages
 			},
 		},
 	)
