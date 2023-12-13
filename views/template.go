@@ -2,19 +2,25 @@ package views
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
-	"github.com/gorilla/csrf"
-	"github.com/mihailtudos/photosharer/context"
-	"github.com/mihailtudos/photosharer/models"
 	"html/template"
 	"io"
 	"io/fs"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/csrf"
+	"github.com/mihailtudos/photosharer/context"
+	"github.com/mihailtudos/photosharer/models"
 )
 
 type Template struct {
 	htmlTmpl *template.Template
+}
+
+type public interface {
+	Public() string
 }
 
 func Must(t Template, err error) Template {
@@ -64,6 +70,8 @@ func (t Template) Execute(w http.ResponseWriter, r *http.Request, data interface
 	// it allows to check if there is any error before writing the template and avoiding broken pages
 	var buf bytes.Buffer
 
+	errMsgs := errMessages(errs...)
+
 	// add the csfr token here as we have access to the request
 	tpl = tpl.Funcs(
 		template.FuncMap{
@@ -74,11 +82,7 @@ func (t Template) Execute(w http.ResponseWriter, r *http.Request, data interface
 				return context.User(r.Context())
 			},
 			"errors": func() []string {
-				var errMessages []string
-				for _, err := range errs {
-					errMessages = append(errMessages, err.Error())
-				}
-				return errMessages
+				return errMsgs
 			},
 		},
 	)
@@ -96,4 +100,18 @@ func (t Template) Execute(w http.ResponseWriter, r *http.Request, data interface
 		http.Error(w, "Failed executing the template", http.StatusInternalServerError)
 		return
 	}
+}
+
+func errMessages(errs ...error) []string {
+	var errMessages []string
+	for _, err := range errs {
+		var pubErr public
+		if errors.As(err, &pubErr) {
+			errMessages = append(errMessages, pubErr.Public())
+		} else {
+			fmt.Println(err)
+			errMessages = append(errMessages, "Something went wrong.")
+		}
+	}
+	return errMessages
 }

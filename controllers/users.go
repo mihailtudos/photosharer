@@ -2,11 +2,13 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/mihailtudos/photosharer/context"
-	"github.com/mihailtudos/photosharer/models"
 	"log"
 	"net/http"
 	"net/url"
+
+	"github.com/mihailtudos/photosharer/context"
+	"github.com/mihailtudos/photosharer/errors"
+	"github.com/mihailtudos/photosharer/models"
 )
 
 // Users struct provides functionality needed for the users controller
@@ -85,6 +87,9 @@ func (u Users) Create(w http.ResponseWriter, r *http.Request) {
 
 	user, err := u.UserService.Create(data.Email, data.Password)
 	if err != nil {
+		if errors.Is(err, models.ErrEmailTaken) {
+			err = errors.Public(err, "This email is alrealy associated with an account.")
+		}
 		u.Templates.New.Execute(w, r, data, err)
 		return
 	}
