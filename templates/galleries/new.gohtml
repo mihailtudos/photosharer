@@ -1,0 +1,17 @@
+{{ define "content"}}
+    <div class="p-8 w-full h-screen">
+        <h1 class="pt-4 pb-8 text-3xl font-bold text-gray-800 text-center">Create new gallery</h1>
+        <form class="max-w-lg mx-auto shadow-md rounded-[10px] p-4" action="/galleries" method="post">
+            <div class="hidden">
+                {{ csrfField }}
+            </div>
+            <div class="relative mb-4">
+                <label for="title" class="leading-7 text-sm text-gray-600">Title</label>
+                <input type="text" id="title" name="title" placeholder="Gallery title" class="w-full bg-white rounded border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out" required value="{{ .Title }}">
+            </div>
+            <div class="flex justify-end">
+                <button class="text-white bg-blue-500 border-0 py-2 px-6 focus:outline-none hover:bg-blue-600 rounded text-lg">Create</button>
+            </div>
+        </form>
+    </div>
+{{end}}

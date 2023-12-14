@@ -1,0 +1,48 @@
+{{ define "content"}}
+    <div class="p-8 w-full h-screen">
+        <div class="flex gap-2 justify-between items-center">
+            <h1 class="pt-4 pb-8 text-3xl font-bold text-gray-800 text-center">My galleries</h1>
+            <a href="/galleries/new" class="text-white bg-blue-500 border-0 py-2 px-6 focus:outline-none hover:bg-blue-600 rounded text-lg">Create</a>
+        </div>
+        <div class="relative overflow-x-auto">
+            <table class="w-full text-sm text-left rtl:text-right text-gray-500">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3">
+                        Gallery title
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-right">
+                        action
+                    </th>
+                </tr>
+                </thead>
+                <tbody>
+                    {{ if .Galleries}}
+                        {{ range .Galleries}}
+                            <tr class="bg-white border-b">
+                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                                    <a class="underline" href="/galleries/{{ .ID }}"> {{ .Title }}</a>
+                                </th>
+                                <td class="px-6 py-4">
+                                    <div class="flex gap-1 justify-end">
+                                        <a class="text-blue-500" href="/galleries/{{ .ID }}/edit">edit</a>
+                                        <form class="text-red-500 cursor-pointer" action="/galleries/{{ .ID }}/delete" method="post">
+                                            <div class="hidden">
+                                                {{ csrfField }}
+                                            </div>
+                                            <button type="submit" value="delete">delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {{ end }}
+                    {{end}}
+                </tbody>
+            </table>
+            {{ if and .Galleries (eq (len .Galleries) 0) }}
+               <p class="text-center text-lg text-gray-600"> No galleries, <a href="/galleries/new"> create </a> new gallery </p>
+            {{ end }}
+        </div>
+
+    </div>
+{{end}}

@@ -20,10 +20,6 @@ type UserService struct {
 	DB *sql.DB
 }
 
-var (
-	ErrEmailTaken = errors.New("models: email address is already in use")
-)
-
 func (us *UserService) Create(email, password string) (*User, error) {
 	email = strings.ToLower(email)
 	hashedBytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)

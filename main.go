@@ -71,22 +71,17 @@ func main() {
 	}
 
 	// Setup services
-	userService := &models.UserService{
-		DB: db,
-	}
-
-	sessionService := &models.SessionService{
-		DB: db,
-	}
-
+	userService := &models.UserService{DB: db}
+	sessionService := &models.SessionService{DB: db}
 	passwordResetService := &models.PasswordResetService{DB: db}
+	galleryService := &models.GalleryService{DB: db}
 
 	emailService := models.NewEmailService(cfg.SMTP)
 
 	// Setup middleware
 	umw := controllers.UserMiddleware{SessionService: sessionService}
 
-	csrfMiddleware := csrf.Protect([]byte(cfg.CSRF.Key), csrf.Secure(cfg.CSRF.Secure))
+	csrfMiddleware := csrf.Protect([]byte(cfg.CSRF.Key), csrf.Secure(cfg.CSRF.Secure), csrf.Path("/"))
 
 	// Setup controllers
 	usersC := controllers.Users{
@@ -102,6 +97,15 @@ func main() {
 	usersC.Templates.CheckYourEmail = views.Must(views.ParseFS(templates.FS, "layout.gohtml", "shared/navbar.gohtml", "shared/footer.gohtml", "check-your-email.gohtml"))
 	usersC.Templates.ResetPassword = views.Must(views.ParseFS(templates.FS, "layout.gohtml", "shared/navbar.gohtml", "shared/footer.gohtml", "reset-pw.gohtml"))
 
+	galleriesController := controllers.Galleries{
+		GalleryService: galleryService,
+	}
+
+	galleriesController.Templates.New = views.Must(views.ParseFS(templates.FS, "layout.gohtml", "shared/navbar.gohtml", "shared/footer.gohtml", "galleries/new.gohtml"))
+	galleriesController.Templates.Edit = views.Must(views.ParseFS(templates.FS, "layout.gohtml", "shared/navbar.gohtml", "shared/footer.gohtml", "galleries/edit.gohtml"))
+	galleriesController.Templates.Index = views.Must(views.ParseFS(templates.FS, "layout.gohtml", "shared/navbar.gohtml", "shared/footer.gohtml", "galleries/index.gohtml"))
+	galleriesController.Templates.Show = views.Must(views.ParseFS(templates.FS, "layout.gohtml", "shared/navbar.gohtml", "shared/footer.gohtml", "galleries/show.gohtml"))
+
 	//setup router and routes
 	r := chi.NewRouter()
 	r.Use(csrfMiddleware)
@@ -116,6 +120,7 @@ func main() {
 	tpl = views.Must(views.ParseFS(templates.FS, "layout.gohtml", "shared/navbar.gohtml", "shared/footer.gohtml", "faq.gohtml"))
 	r.Get("/faq", controllers.FAQ(tpl))
 
+	// Users related routes
 	r.Get("/signup", usersC.New)
 	r.Get("/signin", usersC.SignIn)
 	r.Post("/users", usersC.Create)
@@ -125,6 +130,22 @@ func main() {
 	r.Post("/forgot-pw", usersC.ProcessForgotPassword)
 	r.Get("/reset-pw", usersC.ResetPassword)
 	r.Post("/reset-pw", usersC.ProcessResetPassword)
+
+	// Galleries related routes
+	r.Route("/galleries", func(r chi.Router) {
+		r.Get("/{id}", galleriesController.Show)
+
+		r.Group(func(r chi.Router) {
+
+			r.Use(umw.RequireUser)
+			r.Get("/", galleriesController.Index)
+			r.Get("/new", galleriesController.New)
+			r.Post("/", galleriesController.Create)
+			r.Post("/{id}", galleriesController.Update)
+			r.Get("/{id}/edit", galleriesController.Edit)
+			r.Post("/{id}/delete", galleriesController.Delete)
+		})
+	})
 
 	r.Route("/users/me", func(r chi.Router) {
 		r.Use(umw.RequireUser)
