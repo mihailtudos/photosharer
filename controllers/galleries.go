@@ -6,8 +6,8 @@ import (
 	"github.com/mihailtudos/photosharer/context"
 	"github.com/mihailtudos/photosharer/errors"
 	"github.com/mihailtudos/photosharer/models"
-	"math/rand"
 	"net/http"
+	"net/url"
 	"strconv"
 )
 
@@ -73,13 +73,37 @@ func (g Galleries) Edit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	type Image struct {
+		GalleryID int
+		Filename  string
+		// Escapes file name as the unescaped files won't load,
+		// another option is to create a template function and use it throughout the templates
+		FilenameEscaped string
+	}
+
 	var data struct {
-		ID    int
-		Title string
+		ID     int
+		Title  string
+		Images []Image
 	}
 
 	data.ID = gallery.ID
 	data.Title = gallery.Title
+
+	images, err := g.GalleryService.Images(gallery.ID)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+
+	for _, image := range images {
+		data.Images = append(data.Images, Image{
+			Filename:        image.Filename,
+			GalleryID:       image.GalleryID,
+			FilenameEscaped: url.PathEscape(image.Filename),
+		})
+	}
 
 	g.Templates.Edit.Execute(w, r, data)
 }
@@ -123,22 +147,120 @@ func (g Galleries) Delete(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/galleries", http.StatusFound)
 }
 
+func (g Galleries) Image(w http.ResponseWriter, r *http.Request) {
+	filename := chi.URLParam(r, "filename")
+	galleryID, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Invalid gallery id", http.StatusInternalServerError)
+		return
+	}
+
+	image, err := g.GalleryService.Image(galleryID, filename)
+	if err != nil {
+		fmt.Println(err)
+		if errors.Is(err, models.ErrNotFound) {
+			http.Error(w, "Image not found", http.StatusNotFound)
+			return
+		}
+
+		http.Error(w, "Something went wrong", http.StatusNotFound)
+		return
+	}
+
+	http.ServeFile(w, r, image.Path)
+}
+
+func (g Galleries) DeleteImage(w http.ResponseWriter, r *http.Request) {
+	filename := chi.URLParam(r, "filename")
+	gallery, err := g.galleryByID(w, r, userMustOwnGallery)
+	if err != nil {
+		return
+	}
+
+	err = g.GalleryService.DeleteImage(gallery.ID, filename)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Something went wrong", http.StatusNotFound)
+		return
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/galleries/%d/edit", gallery.ID), http.StatusFound)
+}
+
+func (g Galleries) UploadImages(w http.ResponseWriter, r *http.Request) {
+	gallery, err := g.galleryByID(w, r, userMustOwnGallery)
+	if err != nil {
+		return
+	}
+
+	err = r.ParseMultipartForm(5 << 20)
+	if err != nil {
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+
+	filesHeaders := r.MultipartForm.File["images"]
+	for _, fileHeader := range filesHeaders {
+		file, err := fileHeader.Open()
+		if err != nil {
+			http.Error(w, "Something went wrong", http.StatusInternalServerError)
+			return
+		}
+
+		defer file.Close()
+		err = g.GalleryService.CreateImage(gallery.ID, fileHeader.Filename, file)
+
+		if err != nil {
+			var fileErr models.FileError
+			if errors.As(err, &fileErr) {
+				msg := fmt.Sprintf("%v has an invalid content type or extenstion. Only png, gif and jpg files can be uploaded.", fileHeader.Filename)
+				http.Error(w, msg, http.StatusBadRequest)
+				return
+			}
+
+			http.Error(w, "Something went wrong", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	editPath := fmt.Sprintf("/galleries/%d/edit", gallery.ID)
+	http.Redirect(w, r, editPath, http.StatusFound)
+}
+
 func (g Galleries) Show(w http.ResponseWriter, r *http.Request) {
 	gallery, err := g.galleryByID(w, r)
 	if err != nil {
 		return
 	}
 
+	type Image struct {
+		GalleryID int
+		Filename  string
+		// Escapes file name as the unescaped files won't load,
+		// another option is to create a template function and use it throughout the templates
+		FilenameEscaped string
+	}
+
 	var data struct {
 		Gallery models.Gallery
-		Images  []string
+		Images  []Image
 	}
 
 	data.Gallery = *gallery
-	for i := 0; i < 20; i++ {
-		w, h := rand.Intn(500)+200, rand.Intn(500)+200
-		catImgUrl := fmt.Sprintf("https://picsum.photos/%d/%d", w, h)
-		data.Images = append(data.Images, catImgUrl)
+	images, err := g.GalleryService.Images(gallery.ID)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+
+	for _, image := range images {
+		data.Images = append(data.Images, Image{
+			Filename:        image.Filename,
+			GalleryID:       image.GalleryID,
+			FilenameEscaped: url.PathEscape(image.Filename),
+		})
 	}
 
 	g.Templates.Show.Execute(w, r, data)

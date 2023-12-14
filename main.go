@@ -134,16 +134,18 @@ func main() {
 	// Galleries related routes
 	r.Route("/galleries", func(r chi.Router) {
 		r.Get("/{id}", galleriesController.Show)
+		r.Get("/{id}/images/{filename}", galleriesController.Image)
 
 		r.Group(func(r chi.Router) {
-
 			r.Use(umw.RequireUser)
 			r.Get("/", galleriesController.Index)
 			r.Get("/new", galleriesController.New)
 			r.Post("/", galleriesController.Create)
 			r.Post("/{id}", galleriesController.Update)
+			r.Post("/{id}/images", galleriesController.UploadImages)
 			r.Get("/{id}/edit", galleriesController.Edit)
 			r.Post("/{id}/delete", galleriesController.Delete)
+			r.Post("/{id}/images/{filename}/delete", galleriesController.DeleteImage)
 		})
 	})
 

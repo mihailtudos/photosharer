@@ -72,7 +72,7 @@ func (u Users) Authenticate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setCookie(w, CookieSession, session.Token)
-	http.Redirect(w, r, "/users/me", http.StatusFound)
+	http.Redirect(w, r, "/galleries", http.StatusFound)
 }
 
 // Create method on the users service is used to register new users
@@ -102,7 +102,7 @@ func (u Users) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setCookie(w, CookieSession, session.Token)
-	http.Redirect(w, r, "/users/me", http.StatusFound)
+	http.Redirect(w, r, "/galleries", http.StatusFound)
 }
 
 // CurrentUser method on the users service would return the current signed-in user

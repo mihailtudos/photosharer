@@ -1,14 +1,14 @@
 {{ define "content"}}
-    <div class="p-8 w-full h-screen">
+    <div class="p-8 w-full min-h-screen">
         <div class="flex gap-2 justify-between items-center">
             <h1 class="pt-4 pb-8 text-3xl font-bold text-gray-800 text-center">{{ .Gallery.Title}}</h1>
             <a href="/galleries/{{ .Gallery.ID }}/edit" class="text-white bg-blue-500 border-0 py-2 px-6 focus:outline-none hover:bg-blue-600 rounded text-lg">Edit</a>
         </div>
-        <div class="columns-4 gap-4 space-y-4">
+        <div class="lg:columns-4 columns-2 gap-4 space-y-4">
             {{ range .Images }}
                 <div class="h-min w-full">
-                    <a href="{{.}}">
-                        <img class="w-full" src="{{ . }}" alt="Kitten">
+                    <a href="/galleries/{{.GalleryID}}/images/{{.FilenameEscaped}}">
+                        <img class="w-full" src="/galleries/{{ .GalleryID }}/images/{{.FilenameEscaped}}" alt="Kitten">
                     </a>
                 </div>
             {{end}}
