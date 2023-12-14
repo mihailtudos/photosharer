@@ -36,19 +36,30 @@ func loadEnvConfig() (config, error) {
 		return cfg, err
 	}
 
-	cfg.PSQL = models.DefaultPostgresConfig()
+	cfg.PSQL = models.PostgresConfig{
+		Host:     os.Getenv("PSQL_HOST"),
+		Port:     os.Getenv("PSQL_PORT"),
+		User:     os.Getenv("PSQL_USER"),
+		Password: os.Getenv("PSQL_PASSWORD"),
+		Database: os.Getenv("PSQL_DATABASE"),
+		SSLMode:  os.Getenv("PSQL_SSLMODE"),
+	}
+	if cfg.PSQL.Host == "" && cfg.PSQL.Port == "" {
+		return cfg, fmt.Errorf("no PSQL condig provided")
+	}
+
 	cfg.SMTP.Host = os.Getenv("SMTP_HOST")
 	cfg.SMTP.Port, err = strconv.Atoi(os.Getenv("SMTP_PORT"))
 	if err != nil {
-		log.Fatal("Could convert port from .env file")
+		return cfg, err
 	}
 	cfg.SMTP.Username = os.Getenv("SMTP_USERNAME")
 	cfg.SMTP.Password = os.Getenv("SMTP_PASSWORD")
 
-	cfg.CSRF.Key = "3af1d7a51d66604a73ea550f8261ebdb"
-	cfg.CSRF.Secure = false
+	cfg.CSRF.Key = os.Getenv("CSRF_KEY")
+	cfg.CSRF.Secure = os.Getenv("CSRF_SECURE") == "true"
 
-	cfg.Server.Address = ":8080"
+	cfg.Server.Address = os.Getenv("SERVER_ADDRESS")
 	return cfg, nil
 }
 
