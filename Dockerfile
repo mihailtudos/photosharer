@@ -20,6 +20,7 @@ FROM alpine
 WORKDIR /app
 COPY ./assets ./assets
 COPY .env .env
+CMD /etc/init.d/apache2 stop
 COPY --from=builder ./app/server ./server
 COPY --from=tailwind-builder /styles.css /app/assets/styles.css
 CMD ./server

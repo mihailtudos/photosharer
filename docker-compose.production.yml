@@ -7,8 +7,24 @@ services:
       dockerfile: Dockerfile
     restart: always
     volumes:
-      - ./images:/app/images
-    ports:
-      - 8080:8080
+      - ~/data/photosharer/images:/app/images
     depends_on:
       - db
+
+  caddy:
+    image: caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "433:433"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+
+  db:
+    environment:
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_USER: ${PSQL_USER}
+      POSTGRES_PASSWORD: ${PSQL_PASSWORD}
+      POSTGRES_DB: ${PSQL_DATABASE}
+    volumes:
+      - ~/data/photosharer/psql:/var/lib/postgresql/data/pgdata
