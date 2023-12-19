@@ -1,3 +1,3 @@
-renect.co.uk
-
-reverse_proxy server:8080
+renect.co.uk {
+    reverse_proxy localhost:8080
+}
