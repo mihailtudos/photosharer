@@ -1,4 +1,5 @@
-renect.co.uk {
-    reverse_proxy localhost:8080
-    tls self_signed
-}
+renect.co.uk
+
+reverse_proxy :8080
+tls self_signed
+
