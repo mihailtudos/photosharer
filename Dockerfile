@@ -3,7 +3,6 @@ WORKDIR /tailwind
 RUN npm init -y && \
     npm install tailwindcss && \
     npx tailwindcss init \
-
 COPY ./templates /templates
 COPY ./tailwind/tailwind.config.js  /src/tailwind.config.js
 COPY ./tailwind/styles.css /src/styles.css
@@ -24,5 +23,3 @@ CMD /etc/init.d/apache2 stop
 COPY --from=builder ./app/server ./server
 COPY --from=tailwind-builder /styles.css /app/assets/styles.css
 CMD ./server
-
-
