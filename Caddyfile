@@ -1,3 +1,11 @@
-renect.co.uk
+renect.co.uk {
+    reverse_proxy server:8080
+}
 
-reverse_proxy server:8080
+www.renect.co.uk {
+    reverse_proxy server:8080
+}
+
+photosharer.renect.co.uk {
+    reverse_proxy server:8080
+}
