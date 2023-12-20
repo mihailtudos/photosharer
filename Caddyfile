@@ -1,5 +1,3 @@
-renect.co.uk
+:80 # change to domain name
 
-reverse_proxy :8080
-tls self_signed
-
+reverse_proxy server:8080
