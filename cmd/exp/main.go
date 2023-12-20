@@ -1,47 +1,69 @@
 package main
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
-
-	"github.com/mihailtudos/photosharer/models"
+	"github.com/joho/godotenv"
+	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
+	"io"
+	"log"
+	"os"
+	"strings"
 )
 
 func main() {
-	email := models.Email{
-		From:      "test@renect.co.uk",
-		To:        "mihairmcr7@gmail.com",
-		Subject:   "Testing emails in Go",
-		Plaintext: "This is the body of the email",
-		HTML: `<h1>Hi there!</h1>
-				<p>This is a test email so if you receive it it's great</p>
-				</br></br> 
-				<p>Regards</p>
-				<p>Mihail</p>`,
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	es := models.NewEmailService(models.SMTPConfig{Host: host, Port: port, Username: username, Password: password})
-	err := es.Send(email)
+	dropboxAppId := os.Getenv("DROPBOX_APP_ID")
+	dropboxAppSecret := os.Getenv("DROPBOX_APP_SECRET")
+	ctx := context.Background()
+	conf := &oauth2.Config{
+		ClientID:     dropboxAppId,
+		ClientSecret: dropboxAppSecret,
+		Scopes:       []string{"files.content.read", "files.metadata.read"},
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  "https://www.dropbox.com/oauth2/authorize",
+			TokenURL: "https://api.dropboxapi.com/oauth2/token",
+		},
+	}
+
+	// use PKCE to protect against CSRF attacks
+	// https://www.ietf.org/archive/id/draft-ietf-oauth-security-topics-22.html#name-countermeasures-6
+	verifier := oauth2.GenerateVerifier()
+
+	// Redirect user to consent page to ask for permission
+	// for the scopes specified above.
+	url := conf.AuthCodeURL("state", oauth2.AccessTypeOffline, oauth2.S256ChallengeOption(verifier))
+	fmt.Printf("Visit the URL for the auth dialog: %v\n", url)
+	fmt.Printf("Once you have a code paste it\n")
+
+	// Use the authorization code that is pushed to the redirect
+	// URL. Exchange will do the handshake to retrieve the
+	// initial access token. The HTTP Client returned by
+	// conf.Client will refresh the token as necessary.
+	var code string
+	if _, err := fmt.Scan(&code); err != nil {
+		log.Fatal(err)
+	}
+	tok, err := conf.Exchange(ctx, code, oauth2.VerifierOption(verifier))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	client := conf.Client(ctx, tok)
+	res, err := client.Post("https://api.dropboxapi.com/2/files/list_folder", "application/json", strings.NewReader(`
+		{
+			"path": ""
+		}
+	`))
 
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
-	fmt.Println("Message sent")
-}
-
-func passHasingExample() {
-	secret := "MySuperSecretPhrase"
-	password := "ThisIsMyPassword"
-
-	h := hmac.New(sha256.New, []byte(secret))
-
-	h.Write([]byte(password))
-
-	output := h.Sum(nil)
-
-	fmt.Println(hex.EncodeToString(output))
-	// => 827e2efb277ea22df6e9559ecd5dd5448b7da6f1ba3d63fde0f14b91714e9bb7
+	defer res.Body.Close()
+	_, _ = io.Copy(os.Stdout, res.Body)
 }
