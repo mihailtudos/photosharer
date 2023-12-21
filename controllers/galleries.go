@@ -6,6 +6,7 @@ import (
 	"github.com/mihailtudos/photosharer/context"
 	"github.com/mihailtudos/photosharer/errors"
 	"github.com/mihailtudos/photosharer/models"
+	"golang.org/x/sync/errgroup"
 	"log"
 	"net/http"
 	"net/url"
@@ -244,12 +245,18 @@ func (g Galleries) UploadImagesViaURL(w http.ResponseWriter, r *http.Request) {
 	files := r.PostForm["files"]
 	log.Printf("%+v\n", files)
 
+	var eg errgroup.Group
 	for _, file := range files {
-		err = g.GalleryService.CreateImageViaURL(gallery.ID, file)
-		if err != nil {
-			http.Error(w, "Bad request", http.StatusBadRequest)
-			return
-		}
+		imageUrl := file
+		eg.Go(func() error {
+			return g.GalleryService.CreateImageViaURL(gallery.ID, imageUrl)
+		})
+	}
+
+	err = eg.Wait()
+	if err != nil {
+		http.Error(w, "Unable to download all images", http.StatusInternalServerError)
+		return
 	}
 
 	editPath := fmt.Sprintf("/galleries/%d/edit", gallery.ID)
