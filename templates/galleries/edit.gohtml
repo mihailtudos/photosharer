@@ -27,6 +27,16 @@
     </form>
 {{ end }}
 
+{{define "images_via_dropbox_form"}}
+    <form class="flex flex-col items-center" action="/galleries/{{ .ID}}/images/url" method="post" enctype="multipart/form-data" id="dropbox-chooser-form">
+        {{ csrfField }}
+        <div class="py-4 text-center">
+            <span class="block text-sm font-semibold text-gray-800">Add images via Dropbox </span>
+            <span class="pb-2 text-xs text-gray-600 font-normal">please only upload jpg, png and gif files</span>
+        </div>
+    </form>
+{{ end }}
+
 {{ define "content"}}
     <div class="p-8 w-full min-h-screen">
         <h1 class="pt-4 pb-8 text-3xl font-bold text-gray-800 text-center">Edit your gallery</h1>
@@ -42,7 +52,9 @@
         </form>
         <div class="mt-8 mx-auto max-w-sm">
             {{template "upload_image_form" .}}
-
+        </div>
+        <div class="mt-8 mx-auto max-w-sm">
+            {{template "images_via_dropbox_form" .}}
         </div>
         <div class="p-8 w-full min-h-screen">
             <div class="flex gap-2 justify-between items-center">

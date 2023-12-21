@@ -1,12 +1,15 @@
 package models
 
 import (
+	"bytes"
 	"database/sql"
 	"fmt"
 	"github.com/mihailtudos/photosharer/errors"
 	"io"
 	"io/fs"
+	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -28,6 +31,29 @@ type GalleryService struct {
 
 	// ImagesDir is used to hold the path where images are located
 	ImagesDir string
+}
+
+func (service *GalleryService) CreateImageViaURL(galleryID int, url string) error {
+	filename := path.Base(url)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("downloading image: %w", err)
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("downloading image: invalid status code %d", resp.StatusCode)
+	}
+
+	imageBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("reading image bytes: %w", err)
+	}
+
+	readSeeker := bytes.NewReader(imageBytes)
+	return service.CreateImage(galleryID, filename, readSeeker)
 }
 
 func (service *GalleryService) Create(title string, userID int) (*Gallery, error) {

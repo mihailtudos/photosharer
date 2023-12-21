@@ -6,6 +6,7 @@ import (
 	"github.com/mihailtudos/photosharer/context"
 	"github.com/mihailtudos/photosharer/errors"
 	"github.com/mihailtudos/photosharer/models"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -220,6 +221,33 @@ func (g Galleries) UploadImages(w http.ResponseWriter, r *http.Request) {
 			}
 
 			http.Error(w, "Something went wrong", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	editPath := fmt.Sprintf("/galleries/%d/edit", gallery.ID)
+	http.Redirect(w, r, editPath, http.StatusFound)
+}
+
+func (g Galleries) UploadImagesViaURL(w http.ResponseWriter, r *http.Request) {
+	gallery, err := g.galleryByID(w, r, userMustOwnGallery)
+	if err != nil {
+		return
+	}
+
+	err = r.ParseForm()
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+	files := r.PostForm["files"]
+	log.Printf("%+v\n", files)
+
+	for _, file := range files {
+		err = g.GalleryService.CreateImageViaURL(gallery.ID, file)
+		if err != nil {
+			http.Error(w, "Bad request", http.StatusBadRequest)
 			return
 		}
 	}

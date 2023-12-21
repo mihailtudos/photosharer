@@ -179,6 +179,7 @@ func run(cfg config) error {
 			r.Post("/", galleriesController.Create)
 			r.Post("/{id}", galleriesController.Update)
 			r.Post("/{id}/images", galleriesController.UploadImages)
+			r.Post("/{id}/images/url", galleriesController.UploadImagesViaURL)
 			r.Get("/{id}/edit", galleriesController.Edit)
 			r.Post("/{id}/delete", galleriesController.Delete)
 			r.Post("/{id}/images/{filename}/delete", galleriesController.DeleteImage)
