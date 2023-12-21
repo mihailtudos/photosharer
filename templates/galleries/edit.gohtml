@@ -75,3 +75,38 @@
         </div>
     </div>
 {{end}}
+
+{{define "body-js"}}
+    <script type="text/javascript" src="https://www.dropbox.com/static/api/2/dropins.js" id="dropboxjs" data-app-key="rn2soxf90nepdxg"></script>
+    <script type="text/javascript">
+        function setupDropbox() {
+            let dbxForm = document.getElementById("dropbox-chooser-form")
+            if (dbxForm === null) {
+                return;
+            }
+            let options = {
+                success: function(files) {
+                    for (let i = 0; i < files.length; i++) {
+                        let input = document.createElement("input");
+                        input.type = "hidden";
+                        input.name = "files"
+                        input.value = files[i].link;
+                        dbxForm.append(input);
+                    }
+
+                    dbxForm.submit();
+                    // alert("Here's the file link: " + files[0].link)
+                },
+                linkType: "direct", // or "preview"
+                multiselect: true, // or true
+                extensions: ['images'],
+                folderselect: false, // or true
+            };
+
+            let button = Dropbox.createChooseButton(options);
+            dbxForm.appendChild(button);
+        }
+
+        setupDropbox();
+    </script>
+{{end}}
